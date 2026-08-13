@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum Role {
+USER
+ADMIN
+MODERATOR
+VISITOR
+}
+
+
+
+enum Visibility {
+PUBLIC
+PRIVATE
+}
+
+
+enum Sujet {
+  ANXIETE
+  DEPRESSION
+  STRESS
+  INSOMNIE
+  GENERAL
+}
+
+enum TypeSignalement {
+  INAPROPRIE
+  SPAM
+  INQUIETANT
+  }
+
+enum StatutSignalement {
+  TRAITE
+  REJETE
+  A_INSPECTER
+}
+
+
+model User {
+id               Int            @id     @default(autoincrement()) 
+role             Role           @default(USER)
+username         String         @unique
+nom              String
+email            String         @unique
+password         String
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+favoris          Favorite[]
+EntreeJournal     JournalEntry[]
+activitee        JournalActivity[]
+groupes          GroupMember[]
+commentaire      Comment[]
+messagesEnvoyer   Message[] @relation("messagesEnvoyer")
+messagesRecu      Message[] @relation("messagesRecu")
+token             RefreshToken[]
+}
+
+
+
+
+model JournalEntry{
+id                Int            @id     @default(autoincrement())  
+visible           Visibility
+sujet             Sujet
+titre             String
+contenue          String
+date              DateTime
+activitee         JournalActivity[]
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+userId            Int            
+user              User           @relation(fields: [userId],references: [id],onDelete: Cascade)
+@@unique([userId, date])
+
+}
+
+
+
+
+model Activity{
+id                Int            @id     @default(autoincrement())
+titre             String
+description       String
+Instruction       String
+createdAt         DateTime       @default(now())
+updatedAt         DateTime       @updatedAt
+resource          Resource[]
+activitee         JournalActivity[]
+
+
+}
+
+
+model JournalActivity{
+id                Int             @id     @default(autoincrement())
+createdAt         DateTime       @default(now())
+updatedAt         DateTime       @updatedAt
+
+userId            Int
+user              User            @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+entreeId          Int             
+entree            JournalEntry    @relation(fields: [entreeId],references: [id],onDelete: Cascade)
+
+activiteeId       Int             
+activite          Activity        @relation(fields: [activiteeId],references: [id],onDelete: Cascade)
+@@unique([entreeId, activiteeId])
+@@index([entreeId])
+}      
+
+
+model Resource{
+id                Int             @id     @default(autoincrement())
+titre             String
+description       String
+lien              String
+
+favoris           Favorite[]
+activiteeId       Int             
+activite          Activity        @relation(fields: [activiteeId],references: [id],onDelete: Cascade)
+@@index([activiteeId])
+}
+
+
+model Favorite{
+id                Int             @id     @default(autoincrement())
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+
+
+ressourceId      Int             
+ressource         Resource        @relation(fields: [ressourceId],references: [id],onDelete: Cascade)
+
+
+userId            Int             
+user              User            @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+@@unique([userId, ressourceId])
+@@index([userId])
+@@index([ressourceId])
+}
+
+
+model Group{
+id                Int             @id     @default(autoincrement())
+titre             String
+sujet             Sujet
+visible           Visibility
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+
+publication       Post[]
+membre            GroupMember[]
+
+}
+
+
+model GroupMember{
+id                Int             @id     @default(autoincrement())
+role              Role
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+
+userId            Int             
+user              User            @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+groupesId         Int             
+groupe            Group           @relation(fields: [groupesId],references: [id],onDelete: Cascade)
+@@unique([userId,groupesId])
+}
+
+
+model Post{
+id                Int             @id     @default(autoincrement())
+sujet             String
+contenue          String
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+
+groupesId         Int             
+groupe            Group           @relation(fields: [groupesId],references: [id],onDelete: Cascade)
+
+commentaire       Comment[]
+signalement       Report[]
+}
+
+
+model Comment{
+id                Int             @id     @default(autoincrement())
+contenue          String
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+
+userId            Int             
+user              User            @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+publicationId     Int             
+publication       Post            @relation(fields: [publicationId],references: [id],onDelete: Cascade)
+}
+
+
+model Message{
+id                Int             @id     @default(autoincrement())
+contenue          String
+createdAt         DateTime        @default(now())
+updatedAt         DateTime        @updatedAt
+
+userId            Int
+expediteur        User            @relation("messagesEnvoyer", fields: [userId],references: [id],onDelete: Cascade)
+
+destinataireId    Int             
+destinataire      User            @relation("messagesRecu", fields: [destinataireId],references: [id],onDelete: Cascade)
+@@index([userId])
+@@index([destinataireId])       
+}
+
+model Report{
+id                Int                 @id     @default(autoincrement())
+statut            StatutSignalement   @default(A_INSPECTER)
+type              TypeSignalement     
+createdAt         DateTime            @default(now())
+updatedAt         DateTime            @updatedAt
+publicationId Int
+publication   Post @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+@@index([publicationId])
+}
+
+model RefreshToken{
+id                Int             @id     @default(autoincrement())
+token             String
+createdAt        DateTime       @default(now())
+updatedAt        DateTime       @updatedAt
+userId            Int            
+user              User           @relation(fields: [userId],references: [id],onDelete: Cascade)
+}
+

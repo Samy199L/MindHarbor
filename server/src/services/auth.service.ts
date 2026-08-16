@@ -66,3 +66,58 @@ export async function loginUser(email: string, password: string) {
   });
   return { refreshToken, accessToken };
 }
+
+export async function tokenRefresh(refreshToken: string) {
+  const verification = await prisma.refreshToken.findFirst({
+    where: { token: refreshToken },
+  });
+  if (!verification) {
+    throw new AppError(
+      401,
+      "INVALIDE",
+      "Le jeton de rafraichissement semble invalide",
+    );
+  }
+
+  try {
+    const payload = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET!,
+    ) as unknown as {
+      sub: number;
+      role: Role;
+    };
+    const accessToken = jwt.sign(
+      { sub: payload.sub, role: payload.role },
+      process.env.JWT_ACCESS_SECRET!,
+      { expiresIn: "15m" },
+    );
+    return accessToken;
+  } catch {
+    throw new AppError(
+      401,
+      "INVALIDE",
+      "Le jeton de rafraichissement semble expiree ou invalide",
+    );
+  }
+}
+
+export async function logoutUser(refreshToken: string) {
+  if (refreshToken) {
+    await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+  }
+}
+
+export async function getUser(userId: number) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      nom: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+}

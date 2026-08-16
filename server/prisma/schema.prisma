@@ -75,10 +75,12 @@ token             RefreshToken[]
 
 model JournalEntry{
 id                Int            @id     @default(autoincrement())  
-visible           Visibility
-sujet             Sujet
-titre             String
-contenue          String
+humeur            Int    
+energie           Int    
+sommeil           Int    
+anxiete           Int
+evenementMarquant String?
+gratitude         String?
 date              DateTime
 activitee         JournalActivity[]
 createdAt        DateTime       @default(now())

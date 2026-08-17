@@ -20,7 +20,7 @@ export async function registerUser(
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
+      err.code === "P2002" //contrainte unique
     ) {
       throw new AppError(
         409,

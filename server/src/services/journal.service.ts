@@ -5,13 +5,13 @@ import type {
   entreeCreerInput,
   entreeUpdateInput,
 } from "../schemas/journal.schema.js";
-
+//normaliser date a minuit(1entree par date)
 function minuit(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   return d;
 }
-
+//url:str -> date
 function parseDate(dateStr: string): Date {
   return minuit(new Date(dateStr));
 }
